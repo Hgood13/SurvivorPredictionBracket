@@ -42,8 +42,30 @@
     }
 
     .container {
-      max-width: 450px;
+      max-width: 1200px;
       margin: 0 auto;
+    }
+
+    .form-wrapper {
+      display: grid;
+      grid-template-columns: 360px 1fr 360px;
+      gap: 16px;
+      align-items: center;
+      justify-items: center;
+    }
+
+    .form-wrapper img {
+      width: 360px;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+      display: none;
+      object-fit: cover;
+    }
+
+    @media (min-width: 768px) {
+      .form-wrapper img {
+        display: block;
+      }
     }
 
     .card {
@@ -167,8 +189,10 @@
   </div>
 
   <div class="container">
-    <div class="card">
-      <form id="predictionForm">
+    <div class="form-wrapper">
+      <img src="images/all_24_contestants_left.jpg" alt="Survivor Cast" />
+      <div class="card">
+        <form id="predictionForm">
       <div>
         <label for="username">Your Name</label>
         <input type="text" id="username" placeholder="Enter your name" required />
@@ -215,7 +239,8 @@
       </div>
       <div id="status"></div>
     </form>
-    </div>
+      </div>
+      <img src="images/all_24_contestants_right.jpg" alt="Survivor Cast" />
   </div>
 
 <script>
