@@ -1,7 +1,13 @@
-- login with email and password?
-    - Name, username, email
-- drop down selecting
-- some basic styling
-- data base storage
+- Current preditions page
+    - with button to make your
+    - date base pulling
+    - Style
+- make your predition page
+    - Drop down with hard coded contestants
+    - Style
+    - X data base storage
+
+
+
 - leaderboard page
     - Username - Name
