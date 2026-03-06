@@ -6,60 +6,155 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Survivor 50 Predictions</title>
   <style>
+    :root {
+      --jungle: #1F3D2B;
+      --wood: #5C3A21;
+      --sand: #C9A66B;
+      --fire: #C45A2A;
+      --gold: #D4AF37;
+      --ocean: #0E4A5A;
+    }
+
+    * { margin: 0; padding: 0; }
+
     body {
-      font-family: -apple-system, system-ui, Segoe UI, Roboto, Arial, sans-serif;
-      margin: 0;
+      font-family: 'Georgia', 'Times New Roman', serif;
+      background: linear-gradient(135deg, #F5E6D3 0%, #EDD5BB 100%);
+      color: var(--jungle);
       padding: 16px;
-      max-width: 600px;
+      min-height: 100vh;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 24px;
+      background: linear-gradient(180deg, rgba(95, 61, 43, 0.9) 0%, rgba(31, 61, 43, 0.95) 100%);
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    }
+
+    .logo-container {
+      margin-bottom: 12px;
+    }
+
+    .logo-container img {
+      max-width: 200px;
+      height: auto;
+      filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.5));
+    }
+
+    h1 {
+      font-size: 28px;
+      color: var(--gold);
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+      margin-bottom: 4px;
+      letter-spacing: 1px;
+    }
+
+    .sub {
+      color: var(--sand);
+      font-size: 14px;
+    }
+
+    .container {
+      max-width: 700px;
       margin: 0 auto;
     }
-    h1 { font-size: 24px; margin: 0 0 8px; }
-    .sub { opacity: 0.8; font-size: 13px; margin: 0 0 16px; }
-    .card { border: 1px solid rgba(127,127,127,0.35); border-radius: 12px; padding: 12px; margin: 12px 0; }
-    
-    .prediction-item {
-      background: rgba(127,127,127,0.08);
+
+    .card {
+      background: linear-gradient(135deg, rgba(92, 58, 33, 0.85) 0%, rgba(95, 61, 43, 0.9) 100%);
+      border: 2px solid var(--gold);
       border-radius: 8px;
-      padding: 10px;
-      margin-bottom: 10px;
+      padding: 16px;
+      margin: 16px 0;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1);
+      backdrop-filter: blur(5px);
     }
-    .prediction-name { font-weight: 600; margin-bottom: 6px; }
-    .prediction-details { font-size: 13px; opacity: 0.85; }
-    .prediction-row { margin: 4px 0; }
-    .label { font-weight: 500; }
-    
-    .loading { opacity: 0.6; font-style: italic; }
-    .empty { opacity: 0.7; text-align: center; padding: 20px; }
-    
+
+    .prediction-item {
+      background: linear-gradient(135deg, rgba(201, 166, 107, 0.15) 0%, rgba(196, 90, 42, 0.1) 100%);
+      border: 1px solid var(--sand);
+      border-radius: 6px;
+      padding: 12px;
+      margin-bottom: 12px;
+      backdrop-filter: blur(4px);
+    }
+
+    .prediction-name {
+      font-weight: 700;
+      color: var(--fire);
+      margin-bottom: 8px;
+      font-size: 16px;
+      letter-spacing: 0.5px;
+    }
+
+    .prediction-details {
+      font-size: 13px;
+      color: var(--jungle);
+    }
+
+    .prediction-row {
+      margin: 6px 0;
+      padding-left: 8px;
+      border-left: 2px solid var(--fire);
+    }
+
+    .label {
+      font-weight: 600;
+      color: var(--fire);
+      margin-right: 6px;
+    }
+
+    .loading, .empty {
+      color: var(--jungle);
+      text-align: center;
+      padding: 20px;
+      font-style: italic;
+    }
+
     a.button {
       display: block;
-      width: 100%;
-      padding: 12px;
-      border-radius: 10px;
-      background: rgba(0,128,255,0.18);
-      color: inherit;
+      padding: 14px 20px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, var(--fire) 0%, #A83A1A 100%);
+      color: white;
       text-decoration: none;
       text-align: center;
-      font-weight: 500;
+      font-weight: 700;
       font-size: 16px;
       box-sizing: border-box;
-      margin-top: 12px;
-      border: 1px solid rgba(0,128,255,0.35);
-      transition: background 0.2s;
+      margin-top: 16px;
+      border: 2px solid var(--gold);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+      transition: all 0.3s ease;
+      letter-spacing: 0.5px;
     }
-    a.button:hover { background: rgba(0,128,255,0.25); }
+
+    a.button:hover {
+      background: linear-gradient(135deg, #B84A23 0%, #8B2F16 100%);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 12px rgba(0,0,0,0.4);
+    }
   </style>
 </head>
 <body>
-  <h1>Survivor 50 Predictions</h1>
-  <p class="sub">View all submitted predictions</p>
-
-  <div class="card">
-    <div id="predictionsContainer" class="loading">Loading predictions...</div>
+  <div class="header">
+    <div class="logo-container">
+      <img src="images/Survivor_Logo.jpg" alt="Survivor 50 Logo" />
+    </div>
+    <h1>Survivor 50</h1>
+    <p class="sub">Prediction Bracket</p>
   </div>
 
-  <div class="card">
-    <a href="simple-submit.html" class="button">📝 Make Your Prediction</a>
+  <div class="container">
+    <div class="card">
+      <div id="predictionsContainer" class="loading">Loading predictions...</div>
+    </div>
+
+    <div class="card">
+      <a href="simple-submit.html" class="button">📝 Make Your Prediction</a>
+    </div>
   </div>
 
 <script>
