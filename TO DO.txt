@@ -1,0 +1,7 @@
+- login with email and password?
+    - Name, username, email
+- drop down selecting
+- some basic styling
+- data base storage
+- leaderboard page
+    - Username - Name

@@ -1,0 +1,619 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Survivor 50 Bracket Challenge (MVP)</title>
+  <style>
+    :root { color-scheme: light dark; }
+    body { font-family: -apple-system, system-ui, Segoe UI, Roboto, Arial, sans-serif; margin: 0; padding: 16px; }
+    h1 { font-size: 18px; margin: 0 0 8px; }
+    .sub { opacity: 0.8; font-size: 13px; margin: 0 0 16px; }
+    .card { border: 1px solid rgba(127,127,127,0.35); border-radius: 12px; padding: 12px; margin: 12px 0; }
+    .row { display: grid; grid-template-columns: 1fr; gap: 10px; }
+    label { font-size: 13px; opacity: 0.9; display: block; margin-bottom: 6px; }
+    input[type="text"], textarea, select {
+      width: 100%;
+      padding: 10px;
+      border-radius: 10px;
+      border: 1px solid rgba(127,127,127,0.35);
+      background: transparent;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
+    textarea { min-height: 120px; resize: vertical; }
+    .two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .btnbar { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+    button {
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(127,127,127,0.35);
+      background: rgba(127,127,127,0.12);
+      font-size: 15px;
+    }
+    button.primary { background: rgba(0,128,255,0.18); }
+    .pill { display:inline-block; padding: 4px 8px; border-radius: 999px; border:1px solid rgba(127,127,127,0.35); font-size: 12px; opacity: 0.9; }
+    .score { font-size: 28px; font-weight: 700; margin: 8px 0 0; }
+    .muted { opacity: 0.75; font-size: 12px; }
+    details summary { cursor: pointer; }
+    .grid { display:grid; grid-template-columns: 1fr; gap: 10px; }
+    @media (min-width: 820px) {
+      body { max-width: 860px; margin: 0 auto; }
+      .row { grid-template-columns: 1fr 1fr; }
+      .grid { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <h1>Survivor 50 Bracket Challenge (MVP)</h1>
+  <p class="sub">
+    Offline-friendly. Save picks on your phone. Enter official results later to score.
+    <span class="pill">Winner 25</span>
+    <span class="pill">Runner-up 15</span>
+    <span class="pill">Top 5 +10</span>
+    <span class="pill">Top 10 +5</span>
+    <span class="pill">Merge +5</span>
+    <span class="pill">First Juror 8</span>
+  </p>
+
+  <div class="card">
+    <div class="row">
+      <div>
+        <label for="playerName">Your name (for this device)</label>
+        <input id="playerName" type="text" placeholder="e.g., David" />
+      </div>
+      <div>
+        <label for="seasonLabel">Season label (optional)</label>
+        <input id="seasonLabel" type="text" placeholder="e.g., Survivor 50" />
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="display:none;">
+    <h2 style="font-size:16px;margin:0 0 8px;">Cast list</h2>
+    <p class="muted" style="margin:0 0 8px;">
+      Paste one name per line. This populates the dropdowns. You can change this later.
+    </p>
+    <textarea id="castInput" placeholder="Name 1&#10;Name 2&#10;Name 3"></textarea>
+    <div class="btnbar">
+      <button class="primary" id="applyCastBtn">Apply cast list</button>
+      <button id="loadSampleBtn">Load sample names</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2 style="font-size:16px;margin:0 0 8px;">Your picks</h2>
+
+    <div class="grid">
+      <div>
+        <label for="pickWinner">Winner</label>
+        <input id="pickWinner" type="text" placeholder="Enter winner name" />
+      </div>
+      <div>
+        <label for="pickRunnerUp">Runner-up</label>
+        <input id="pickRunnerUp" type="text" placeholder="Enter runner-up name" />
+      </div>
+    </div>
+
+    <div class="grid">
+      <div>
+        <label for="pickTop5">Top 5 (comma separated)</label>
+        <input id="pickTop5" type="text" placeholder="e.g. Name1, Name2, ..." />
+      </div>
+      <div>
+        <label for="pickTop10">Top 10 (comma separated)</label>
+        <input id="pickTop10" type="text" placeholder="e.g. Name1, Name2, ..." />
+      </div>
+    </div>
+
+    <div class="grid">
+      <div>
+        <label for="pickMerge">Makes the Merge (comma separated)</label>
+        <input id="pickMerge" type="text" placeholder="e.g. Name1, Name2, ..." />
+      </div>
+      <div>
+        <label for="pickFirstJuror">First Juror</label>
+        <input id="pickFirstJuror" type="text" placeholder="Enter first juror name" />
+      </div>
+    </div>
+
+    <div class="grid">
+      <div>
+        <label for="pickMostIndi">Most Individual Challenges Won</label>
+        <input id="pickMostIndi" type="text" placeholder="Enter name" />
+      </div>
+    </div>
+
+    <div class="btnbar">
+      <button class="primary" id="savePicksBtn">Save picks</button>
+      <button id="clearPicksBtn">Clear picks</button>
+    </div>
+    <div id="saveStatus" class="muted" style="margin-top:8px;"></div>
+  </div>
+
+  <div class="card">
+    <h2 style="font-size:16px;margin:0 0 8px;">Results + scoring</h2>
+    <p class="muted" style="margin:0 0 10px;">When the season is done (or milestones are known), enter the official results to compute your score.</p>
+
+    <details>
+      <summary style="margin-bottom:10px;">Enter official results</summary>
+
+      <div class="grid">
+        <div>
+          <label for="resWinner">Official Winner</label>
+          <select id="resWinner"></select>
+        </div>
+        <div>
+          <label for="resRunnerUp">Official Runner-up</label>
+          <select id="resRunnerUp"></select>
+        </div>
+      </div>
+
+      <div class="grid">
+        <div>
+          <label for="resTop5">Official Top 5</label>
+          <select id="resTop5" multiple size="8"></select>
+        </div>
+        <div>
+          <label for="resTop10">Official Top 10</label>
+          <select id="resTop10" multiple size="8"></select>
+        </div>
+      </div>
+
+      <div class="grid">
+        <div>
+          <label for="resMerge">Official Merge group</label>
+          <select id="resMerge" multiple size="8"></select>
+        </div>
+        <div>
+          <label for="resFirstJuror">Official First Juror</label>
+          <select id="resFirstJuror"></select>
+        </div>
+      </div>
+
+      <div class="btnbar">
+        <button class="primary" id="scoreBtn">Compute score</button>
+        <button id="saveResultsBtn">Save results</button>
+        <button id="clearResultsBtn">Clear results</button>
+      </div>
+      <div id="resultsStatus" class="muted" style="margin-top:8px;"></div>
+    </details>
+
+    <div style="margin-top:12px;">
+      <div class="muted">Your total score</div>
+      <div class="score" id="scoreOut">—</div>
+      <div class="muted" id="breakdownOut"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2 style="font-size:16px;margin:0 0 8px;">How to use on iPhone</h2>
+    <ol style="margin:0; padding-left: 18px;">
+      <li>Copy this into a file named <b>survivor50.html</b>.</li>
+      <li>Save it in the <b>Files</b> app (On My iPhone).</li>
+      <li>Tap it → opens in Safari. Use <b>Share → Add to Home Screen</b> if you want.</li>
+    </ol>
+  </div>
+
+<script>
+
+
+
+  // ====== Scoring rules (edit here) ======
+  const POINTS = {
+    winner: 25,
+    runnerUp: 15,
+    top5: 10,       // per correct person in Top 5 set
+    top10: 5,       // per correct person in Top 10 set
+    merge: 5,       // per correct person in Merge set
+    firstJuror: 8
+  };
+
+  // ====== Storage keys ======
+  const KEY = {
+    cast: "s50_cast",
+    meta: "s50_meta",
+    picks: "s50_picks",
+    results: "s50_results"
+  };
+
+  // ====== Helpers ======
+  const $ = (id) => document.getElementById(id);
+
+  function normalizeName(s) {
+    return (s || "").trim();
+  }
+
+  function uniq(arr) {
+    const out = [];
+    const seen = new Set();
+    for (const x of arr) {
+      const n = normalizeName(x);
+      if (!n) continue;
+      const key = n.toLowerCase();
+      if (!seen.has(key)) { seen.add(key); out.push(n); }
+    }
+    return out;
+  }
+
+  function getSelectValues(sel) {
+    return Array.from(sel.selectedOptions).map(o => o.value);
+  }
+
+  function setSelectValues(sel, values) {
+    const set = new Set((values || []).map(v => v.toLowerCase()));
+    for (const opt of sel.options) opt.selected = set.has(opt.value.toLowerCase());
+  }
+
+  function fillSelect(sel, names, includeBlank=true) {
+    if (!sel) {
+      console.log('fillSelect: element not found');
+      return;
+    }
+    console.log('fillSelect:', sel.id, names, includeBlank);
+    const current = sel.value;
+    sel.innerHTML = "";
+    if (includeBlank && !sel.multiple) {
+      const opt = document.createElement("option");
+      opt.value = "";
+      opt.textContent = "— select —";
+      sel.appendChild(opt);
+    }
+    for (const n of names) {
+      const opt = document.createElement("option");
+      opt.value = n;
+      opt.textContent = n;
+      sel.appendChild(opt);
+    }
+    // Try to preserve current value if still present
+    if (!sel.multiple && current) {
+      const exists = Array.from(sel.options).some(o => o.value === current);
+      if (exists) sel.value = current;
+    }
+  }
+
+  function loadJSON(key, fallback) {
+    try {
+      const raw = localStorage.getItem(key);
+      if (!raw) return fallback;
+      return JSON.parse(raw);
+    } catch {
+      return fallback;
+    }
+  }
+
+  function saveJSON(key, obj) {
+    localStorage.setItem(key, JSON.stringify(obj));
+  }
+
+  function nowStamp() {
+    return new Date().toLocaleString();
+  }
+
+
+  // ====== Hardcoded Cast List ======
+  const HARDCODED_CAST = [
+    "Joe Hunter",
+    "Savannah Louie",
+    "Christian Hubicki",
+    "Cirie Fields",
+    "Ozzy Lusth",
+    "Emily Flippen",
+    "Rick Devens",
+    "Jenna Lewis-Dougherty",
+    "Jonathan Young",
+    "Dee Valladares",
+    "Mike White",
+    "Kamilla Karthigesu",
+    "Charlie Davis",
+    "Tiffany Ervin",
+    "Benjamin \"Coach\" Wade",
+    "Chrissy Hofbeck",
+    "Colby Donaldson",
+    "Genevieve Mushaluk",
+    "Rizo Velovic",
+    "Angelina Keeley",
+    "Q Burdette",
+    "Stephenie LaGrossa Kendrick",
+    "Kyle Fraser",
+    "Aubry Bracco"
+  ];
+
+  function getCast() {
+    return HARDCODED_CAST;
+  }
+  function setCast(names) {
+    // Do nothing, cast is hardcoded
+  }
+
+  function refreshAllDropdowns() {
+    const cast = getCast();
+    console.log('refreshAllDropdowns called, cast:', cast);
+    const pickSingles = ["pickWinner","pickRunnerUp","pickFirstJuror","pickMostIndi","resWinner","resRunnerUp","resFirstJuror"];
+    const pickMultis  = ["pickTop5","pickTop10","pickMerge","resTop5","resTop10","resMerge"];
+
+    pickSingles.forEach(id => {
+      console.log('Populating single:', id, $(id));
+      fillSelect($(id), cast, true);
+    });
+    pickMultis.forEach(id => {
+      console.log('Populating multi:', id, $(id));
+      fillSelect($(id), cast, false);
+    });
+
+    // Re-apply saved picks/results after repopulating options
+    applySavedToUI();
+  }
+
+  function applySavedToUI() {
+    const meta = loadJSON(KEY.meta, {});
+    $("playerName").value = meta.playerName || "";
+    $("seasonLabel").value = meta.seasonLabel || "";
+
+    // const cast = getCast();
+    // If castInput exists (not hidden), set its value, otherwise skip
+    const castInput = $("castInput");
+    if (castInput) castInput.value = getCast().join("\n");
+
+    const picks = loadJSON(KEY.picks, {});
+    $("pickWinner").value = picks.winner || "";
+    $("pickRunnerUp").value = picks.runnerUp || "";
+    $("pickFirstJuror").value = picks.firstJuror || "";
+    $("pickMostIndi").value = picks.mostIndi || "";
+    setSelectValues($("pickTop5"), picks.top5 || []);
+    setSelectValues($("pickTop10"), picks.top10 || []);
+    setSelectValues($("pickMerge"), picks.merge || []);
+
+    const results = loadJSON(KEY.results, {});
+    $("resWinner").value = results.winner || "";
+    $("resRunnerUp").value = results.runnerUp || "";
+    $("resFirstJuror").value = results.firstJuror || "";
+    setSelectValues($("resTop5"), results.top5 || []);
+    setSelectValues($("resTop10"), results.top10 || []);
+    setSelectValues($("resMerge"), results.merge || []);
+  }
+
+  // ====== Validation ======
+  function validatePicks(p) {
+    const errors = [];
+    if (p.winner && p.runnerUp && p.winner.toLowerCase() === p.runnerUp.toLowerCase()) {
+      errors.push("Winner and Runner-up can’t be the same person.");
+    }
+    if (p.top5.length > 5) errors.push("Top 5 has more than 5 selected.");
+    if (p.top10.length > 10) errors.push("Top 10 has more than 10 selected.");
+
+    // Optional: enforce exact counts (comment in if you want strict)
+    // if (p.top5.length !== 5) errors.push("Top 5 must be exactly 5 picks.");
+    // if (p.top10.length !== 10) errors.push("Top 10 must be exactly 10 picks.");
+
+    return errors;
+  }
+
+  function validateResults(r) {
+    const errors = [];
+    if (r.winner && r.runnerUp && r.winner.toLowerCase() === r.runnerUp.toLowerCase()) {
+      errors.push("Official Winner and Runner-up can’t be the same person.");
+    }
+    if (r.top5.length > 5) errors.push("Official Top 5 has more than 5 selected.");
+    if (r.top10.length > 10) errors.push("Official Top 10 has more than 10 selected.");
+    return errors;
+  }
+
+  // ====== Scoring ======
+  function intersectCount(a, b) {
+    const setB = new Set((b || []).map(x => x.toLowerCase()));
+    let count = 0;
+    for (const x of (a || [])) if (setB.has(x.toLowerCase())) count++;
+    return count;
+  }
+
+  function computeScore(picks, results) {
+    let total = 0;
+    const parts = [];
+
+    if (results.winner) {
+      const hit = picks.winner && picks.winner.toLowerCase() === results.winner.toLowerCase();
+      const pts = hit ? POINTS.winner : 0;
+      total += pts;
+      parts.push(`Winner: ${pts}/${POINTS.winner}`);
+    } else parts.push("Winner: —");
+
+    if (results.runnerUp) {
+      const hit = picks.runnerUp && picks.runnerUp.toLowerCase() === results.runnerUp.toLowerCase();
+      const pts = hit ? POINTS.runnerUp : 0;
+      total += pts;
+      parts.push(`Runner-up: ${pts}/${POINTS.runnerUp}`);
+    } else parts.push("Runner-up: —");
+
+    if ((results.top5 || []).length) {
+      const hits = intersectCount(picks.top5, results.top5);
+      const pts = hits * POINTS.top5;
+      total += pts;
+      parts.push(`Top 5: ${pts} (${hits}×${POINTS.top5})`);
+    } else parts.push("Top 5: —");
+
+    if ((results.top10 || []).length) {
+      const hits = intersectCount(picks.top10, results.top10);
+      const pts = hits * POINTS.top10;
+      total += pts;
+      parts.push(`Top 10: ${pts} (${hits}×${POINTS.top10})`);
+    } else parts.push("Top 10: —");
+
+    if ((results.merge || []).length) {
+      const hits = intersectCount(picks.merge, results.merge);
+      const pts = hits * POINTS.merge;
+      total += pts;
+      parts.push(`Merge: ${pts} (${hits}×${POINTS.merge})`);
+    } else parts.push("Merge: —");
+
+    if (results.firstJuror) {
+      const hit = picks.firstJuror && picks.firstJuror.toLowerCase() === results.firstJuror.toLowerCase();
+      const pts = hit ? POINTS.firstJuror : 0;
+      total += pts;
+      parts.push(`First Juror: ${pts}/${POINTS.firstJuror}`);
+    } else parts.push("First Juror: —");
+
+    return { total, parts };
+  }
+
+  // ====== Supabase integration ======
+  function getInputValues(id) {
+    // For comma-separated fields
+    return $(id).value.split(',').map(s => s.trim()).filter(Boolean);
+  }
+
+  async function savePicks(){
+    const picks = {
+      username: "testUser",  // we will replace this later with login
+      winner: $("pickWinner").value,
+      runner_up: $("pickRunnerUp").value,
+      top5: getInputValues("pickTop5"),
+      top10: getInputValues("pickTop10"),
+      merge: getInputValues("pickMerge"),
+      first_juror: $("pickFirstJuror").value,
+      most_indi_challenges: $("pickMostIndi").value
+    };
+    console.log('Sending picks to Supabase:', picks);
+    const { data, error } = await supabase
+      .from("predictions")
+      .insert([picks]);
+    console.log('Supabase response:', { data, error });
+    if(error){
+      alert("Error: " + error.message);
+    } else {
+      alert("Picks saved!");
+    }
+  }
+
+  // ====== Events ======
+  $("applyCastBtn").addEventListener("click", () => {
+    const names = uniq(($("castInput").value || "").split("\n"));
+    setCast(names);
+    refreshAllDropdowns();
+    $("saveStatus").textContent = `Cast list applied (${names.length} names) • ${nowStamp()}`;
+  });
+
+  $("loadSampleBtn").addEventListener("click", () => {
+    const sample = [
+      "Person A","Person B","Person C","Person D","Person E","Person F","Person G","Person H",
+      "Person I","Person J","Person K","Person L","Person M","Person N","Person O","Person P"
+    ];
+    $("castInput").value = sample.join("\n");
+  });
+
+  $("savePicksBtn").addEventListener("click", () => {
+    const meta = {
+      playerName: normalizeName($("playerName").value),
+      seasonLabel: normalizeName($("seasonLabel").value)
+    };
+    saveJSON(KEY.meta, meta);
+
+    const picks = {
+      winner: $("pickWinner").value,
+      runnerUp: $("pickRunnerUp").value,
+      top5: getInputValues("pickTop5"),
+      top10: getInputValues("pickTop10"),
+      merge: getInputValues("pickMerge"),
+      firstJuror: $("pickFirstJuror").value,
+      mostIndi: $("pickMostIndi").value,
+      savedAt: new Date().toISOString()
+    };
+
+    const errors = validatePicks(picks);
+    if (errors.length) {
+      $("saveStatus").textContent = "Fix before saving: " + errors.join(" ");
+      return;
+    }
+
+    saveJSON(KEY.picks, picks);
+    $("saveStatus").textContent = `Picks saved • ${nowStamp()}`;
+  });
+
+  $("clearPicksBtn").addEventListener("click", () => {
+    localStorage.removeItem(KEY.picks);
+    applySavedToUI();
+    $("saveStatus").textContent = `Picks cleared • ${nowStamp()}`;
+  });
+
+  $("saveResultsBtn").addEventListener("click", () => {
+    const results = {
+      winner: $("resWinner").value,
+      runnerUp: $("resRunnerUp").value,
+      top5: getInputValues("resTop5"),
+      top10: getInputValues("resTop10"),
+      merge: getInputValues("resMerge"),
+      firstJuror: $("resFirstJuror").value,
+      savedAt: new Date().toISOString()
+    };
+
+    const errors = validateResults(results);
+    if (errors.length) {
+      $("resultsStatus").textContent = "Fix before saving: " + errors.join(" ");
+      return;
+    }
+
+    saveJSON(KEY.results, results);
+    $("resultsStatus").textContent = `Results saved • ${nowStamp()}`;
+  });
+
+  $("clearResultsBtn").addEventListener("click", () => {
+    localStorage.removeItem(KEY.results);
+    applySavedToUI();
+    $("resultsStatus").textContent = `Results cleared • ${nowStamp()}`;
+    $("scoreOut").textContent = "—";
+    $("breakdownOut").textContent = "";
+  });
+
+  $("scoreBtn").addEventListener("click", () => {
+    const picks = loadJSON(KEY.picks, {});
+    const results = loadJSON(KEY.results, {});
+    const meta = loadJSON(KEY.meta, {});
+    const cast = getCast();
+
+    if (!cast.length) {
+      $("scoreOut").textContent = "—";
+      $("breakdownOut").textContent = "Add a cast list first.";
+      return;
+    }
+    if (!picks || Object.keys(picks).length === 0) {
+      $("scoreOut").textContent = "—";
+      $("breakdownOut").textContent = "Save your picks first.";
+      return;
+    }
+
+    const { total, parts } = computeScore(
+      {
+        winner: picks.winner || "",
+        runnerUp: picks.runnerUp || "",
+        top5: picks.top5 || [],
+        top10: picks.top10 || [],
+        merge: picks.merge || [],
+        firstJuror: picks.firstJuror || ""
+      },
+      {
+        winner: results.winner || "",
+        runnerUp: results.runnerUp || "",
+        top5: results.top5 || [],
+        top10: results.top10 || [],
+        merge: results.merge || [],
+        firstJuror: results.firstJuror || ""
+      }
+    );
+
+    const who = meta.playerName ? `${meta.playerName}: ` : "";
+    $("scoreOut").textContent = `${who}${total}`;
+    $("breakdownOut").textContent = parts.join(" • ");
+  });
+
+  // ====== Boot ======
+  document.addEventListener('DOMContentLoaded', function() {
+    // Hide the cast input card if present
+    document.querySelectorAll('.card').forEach(card => {
+      if (card.querySelector('#castInput')) card.style.display = 'none';
+    });
+    refreshAllDropdowns();
+  });
+</script>
+</body>
+</html>
