@@ -15,6 +15,22 @@
     }
     h1 { font-size: 20px; margin: 0 0 8px; }
     .card { border: 1px solid rgba(127,127,127,0.35); border-radius: 12px; padding: 12px; margin: 12px 0; }
+    
+    form div { margin-bottom: 12px; }
+    label { display: block; margin-bottom: 6px; font-size: 14px; font-weight: 500; }
+    input[type="text"],
+    select {
+      width: 100%;
+      padding: 8px;
+      border-radius: 8px;
+      border: 1px solid rgba(127,127,127,0.35);
+      background: transparent;
+      font-size: 14px;
+      box-sizing: border-box;
+      color: inherit;
+    }
+    select[multiple] { min-height: 120px; }
+    
     button {
       width: 100%;
       padding: 12px;
@@ -24,6 +40,7 @@
       font-size: 16px;
       cursor: pointer;
       font-weight: 500;
+      margin-top: 12px;
     }
     button:hover { background: rgba(0,128,255,0.25); }
     #status { margin-top: 12px; padding: 10px; border-radius: 8px; display: none; }
@@ -32,12 +49,53 @@
   </style>
 </head>
 <body>
-  <h1>Quick Submission</h1>
+  <h1>Survivor 50 Predictions</h1>
   
   <div class="card">
-    <p>Submit predefined predictions to database.</p>
-    <button id="submitBtn">Send Test Predictions</button>
-    <div id="status"></div>
+    <form id="predictionForm">
+      <div>
+        <label for="username">Your Name</label>
+        <input type="text" id="username" placeholder="Enter your name" required />
+      </div>
+
+      <div>
+        <label for="winner">Winner</label>
+        <select id="winner" required></select>
+      </div>
+
+      <div>
+        <label for="runnerUp">Runner-up</label>
+        <select id="runnerUp" required></select>
+      </div>
+
+      <div>
+        <label for="top5">Top 5 (hold Ctrl/Cmd to select multiple)</label>
+        <select id="top5" multiple size="8"></select>
+      </div>
+
+      <div>
+        <label for="top10">Top 10 (hold Ctrl/Cmd to select multiple)</label>
+        <select id="top10" multiple size="8"></select>
+      </div>
+
+      <div>
+        <label for="merge">Merge Group (hold Ctrl/Cmd to select multiple)</label>
+        <select id="merge" multiple size="8"></select>
+      </div>
+
+      <div>
+        <label for="firstJuror">First Juror</label>
+        <select id="firstJuror" required></select>
+      </div>
+
+      <div>
+        <label for="mostIndi">Most Individual Challenges Won</label>
+        <select id="mostIndi" required></select>
+      </div>
+
+      <button type="submit" id="submitBtn">Submit Predictions</button>
+      <div id="status"></div>
+    </form>
   </div>
 
 <script>
@@ -53,28 +111,91 @@
     }
   }, 100);
 
-  const testPredictions = {
-    username: "testUser",
-    winner: "Joe Hunter",
-    runner_up: "Savannah Louie",
-    top5: ["Christian Hubicki", "Cirie Fields", "Ozzy Lusth","Emily Flippen", "Rick Devens"],
-    top10: ["Emily Flippen", "Rick Devens", "Jenna Lewis", "Jonathan Young", "Dee Valladares","Emily Flippen", "Rick Devens", "Jenna Lewis", "Jonathan Young", "Dee Valladares"],
-    merge: ["Mike White", "Kamilla Karthigesu", "Charlie Davis", "Tiffany Ervin"],
-    first_juror: "Coach Wade",
-    most_indi_challenges: "Q Burdette"
-  };
+  const CONTESTANTS = [
+    "Joe Hunter",
+    "Savannah Louie",
+    "Christian Hubicki",
+    "Cirie Fields",
+    "Ozzy Lusth",
+    "Emily Flippen",
+    "Rick Devens",
+    "Jenna Lewis-Dougherty",
+    "Jonathan Young",
+    "Dee Valladares",
+    "Mike White",
+    "Kamilla Karthigesu",
+    "Charlie Davis",
+    "Tiffany Ervin",
+    'Benjamin "Coach" Wade',
+    "Chrissy Hofbeck",
+    "Colby Donaldson",
+    "Genevieve Mushaluk",
+    "Rizo Velovic",
+    "Angelina Keeley",
+    "Q Burdette",
+    "Stephenie LaGrossa Kendrick",
+    "Kyle Fraser",
+    "Aubry Bracco"
+  ];
 
-  document.getElementById("submitBtn").addEventListener("click", async () => {
+  // Populate all select dropdowns
+  function populateSelects() {
+    const singleSelects = ["winner", "runnerUp", "firstJuror", "mostIndi"];
+    const multiSelects = ["top5", "top10", "merge"];
+
+    singleSelects.forEach(id => {
+      const select = document.getElementById(id);
+      select.innerHTML = '<option value="">-- Select --</option>';
+      CONTESTANTS.forEach(name => {
+        const opt = document.createElement("option");
+        opt.value = name;
+        opt.textContent = name;
+        select.appendChild(opt);
+      });
+    });
+
+    multiSelects.forEach(id => {
+      const select = document.getElementById(id);
+      select.innerHTML = '';
+      CONTESTANTS.forEach(name => {
+        const opt = document.createElement("option");
+        opt.value = name;
+        opt.textContent = name;
+        select.appendChild(opt);
+      });
+    });
+  }
+
+  function getSelectedValues(selectId) {
+    const select = document.getElementById(selectId);
+    return Array.from(select.selectedOptions).map(opt => opt.value);
+  }
+
+  // Handle form submission
+  document.getElementById("predictionForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    
     const statusEl = document.getElementById("status");
     statusEl.textContent = "Sending...";
     statusEl.className = "";
     statusEl.style.display = "block";
 
-    console.log("Submitting:", testPredictions);
+    const predictions = {
+      username: document.getElementById("username").value,
+      winner: document.getElementById("winner").value,
+      runner_up: document.getElementById("runnerUp").value,
+      top5: getSelectedValues("top5"),
+      top10: getSelectedValues("top10"),
+      merge: getSelectedValues("merge"),
+      first_juror: document.getElementById("firstJuror").value,
+      most_indi_challenges: document.getElementById("mostIndi").value
+    };
+
+    console.log("Submitting:", predictions);
 
     const { data, error } = await supabaseClient
       .from("predictions")
-      .insert([testPredictions]);
+      .insert([predictions]);
 
     if (error) {
       statusEl.textContent = `Error: ${error.message}`;
@@ -83,9 +204,13 @@
     } else {
       statusEl.textContent = "✓ Predictions submitted successfully!";
       statusEl.className = "success";
+      document.getElementById("predictionForm").reset();
       console.log("Success:", data);
     }
   });
+
+  // Populate dropdowns on page load
+  document.addEventListener('DOMContentLoaded', populateSelects);
 </script>
 </body>
 </html>
