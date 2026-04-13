@@ -186,7 +186,7 @@
     const container = document.getElementById("predictionsContainer");
     const data = HARDCODED_PREDICTIONS;
 
-    if (!data || data.length === 0) {
+    if (data.length === 0) {
       container.innerHTML = '<div class="empty">No predictions added yet.</div>';
       return;
     }
